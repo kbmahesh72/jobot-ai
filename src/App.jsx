@@ -559,7 +559,7 @@ function SubscribeTab({ form, completion, saveState, paymentQr, onChange, onSubm
             <img src={paymentQr} alt="Random subscription activation QR code" />
             <div>
               <p className="section-kicker">Activate subscription</p>
-              <h3>Scan, pay with Zelle, then text the screenshot to +1 615 960 4713.</h3>
+              <h3>Scan, pay with Zelle, then text the screenshot to +1 925 344 2222.</h3>
               <p>Activation starts after payment verification.</p>
             </div>
           </section>
@@ -586,18 +586,18 @@ function ContactTab() {
       </div>
 
       <div className="contact-cards">
-        <a href="tel:+16159604713" className="contact-card">
+        <a href="tel:+19253442222" className="contact-card">
           <span><Phone size={22} /></span>
           <div>
             <small>Phone</small>
-            <strong>+1 615 960 4713</strong>
+            <strong>+1 925 344 2222</strong>
           </div>
         </a>
-        <a href="mailto:kbmaheswarareddy@gmail.com" className="contact-card">
+        <a href="mailto:maheswara411@gmail.com" className="contact-card">
           <span><Mail size={22} /></span>
           <div>
             <small>Email</small>
-            <strong>kbmaheswarareddy@gmail.com</strong>
+            <strong>maheswara411@gmail.com</strong>
           </div>
         </a>
       </div>
@@ -608,7 +608,7 @@ function ContactTab() {
 async function createRandomPaymentQr(email) {
   const activationCode = crypto.randomUUID()
   return QRCode.toDataURL(
-    `Zelle payment screenshot required for ${email}. Send screenshot to +1 615 960 4713. Activation code: ${activationCode}`,
+    `Zelle payment screenshot required for ${email}. Send screenshot to +1 925 344 2222. Activation code: ${activationCode}`,
     {
       color: {
         dark: '#10212e',
