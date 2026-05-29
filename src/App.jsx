@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import QRCode from 'qrcode'
 import {
   ArrowRight,
-  BellRing,
   BriefcaseBusiness,
   Check,
   Clock3,
@@ -145,11 +144,8 @@ function App() {
     <main className="app-shell">
       <section className="brand-band">
         <div className="brand-lockup">
-          <div className="logo-mark" aria-hidden="true">
-            <BellRing size={26} />
-          </div>
-          <div>
-            <p className="eyebrow">Jobot AI</p>
+          <JobotLogo />
+          <div className="hero-copy">
             <h1>Reach Recruiters Before the Crowd</h1>
           </div>
         </div>
@@ -201,10 +197,40 @@ function App() {
   )
 }
 
+function JobotLogo() {
+  return (
+    <div className="brand-logo" aria-label="JoBot AI intelligent recruitment">
+      <div className="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 72 112" role="img" focusable="false">
+          <path
+            className="logo-shadow logo-shadow-cyan"
+            d="M38.5 5.5c-4.2 14.2-3 25.2 3.8 33.1 5.5 6.5 7.1 13.4 4.8 20.7-1.5 4.8-4.8 9.4-9.8 13.8 8.5 5.9 12.8 12.2 12.8 18.8 0 4.6-2 9.7-6 15.4 1.1-13.2-3.8-22.5-14.7-28-8.7-4.4-18.9-6.5-30.4-6.3 11.2-4.2 20-8.2 26.5-12 6.9-4.1 10.5-8.7 10.8-13.8.2-4.4-2.4-9.4-8-15-5.7-5.8-2.3-14.7 10.2-26.7Z"
+          />
+          <path
+            className="logo-shadow logo-shadow-orange"
+            d="M38.5 5.5c-4.2 14.2-3 25.2 3.8 33.1 5.5 6.5 7.1 13.4 4.8 20.7-1.5 4.8-4.8 9.4-9.8 13.8 8.5 5.9 12.8 12.2 12.8 18.8 0 4.6-2 9.7-6 15.4 1.1-13.2-3.8-22.5-14.7-28-8.7-4.4-18.9-6.5-30.4-6.3 11.2-4.2 20-8.2 26.5-12 6.9-4.1 10.5-8.7 10.8-13.8.2-4.4-2.4-9.4-8-15-5.7-5.8-2.3-14.7 10.2-26.7Z"
+          />
+          <path
+            className="logo-signal"
+            d="M38.5 5.5c-4.2 14.2-3 25.2 3.8 33.1 5.5 6.5 7.1 13.4 4.8 20.7-1.5 4.8-4.8 9.4-9.8 13.8 8.5 5.9 12.8 12.2 12.8 18.8 0 4.6-2 9.7-6 15.4 1.1-13.2-3.8-22.5-14.7-28-8.7-4.4-18.9-6.5-30.4-6.3 11.2-4.2 20-8.2 26.5-12 6.9-4.1 10.5-8.7 10.8-13.8.2-4.4-2.4-9.4-8-15-5.7-5.8-2.3-14.7 10.2-26.7Z"
+          />
+        </svg>
+      </div>
+      <div className="brand-wordmark">
+        <p>
+          JoBot <span>AI</span>
+        </p>
+        <small>Intelligent Recruitment</small>
+      </div>
+    </div>
+  )
+}
+
 function OverviewTab({ onStart }) {
   const [recruiters, setRecruiters] = useState([])
-  const [alertState, setAlertState] = useState({ status: 'loading', message: 'Reading today workbook...' })
+  const [alertState, setAlertState] = useState({ status: 'loading', message: 'Reading recruiter email list...' })
   const [activeRecruiterIndex, setActiveRecruiterIndex] = useState(0)
+  const [emailFlashTick, setEmailFlashTick] = useState(0)
   const [activeKeywordIndex, setActiveKeywordIndex] = useState(0)
   const [currentTime, setCurrentTime] = useState(() => new Date())
 
@@ -227,7 +253,7 @@ function OverviewTab({ onStart }) {
           status: 'ready',
           message: result.recruiters?.length
             ? `${result.recruiters.length} recruiter emails found today`
-            : `No recruiter emails found in ${result.date}.xlsx yet`,
+            : `No recruiter emails found in ${result.source ?? 'email list'} yet`,
         })
       } catch (error) {
         if (isMounted) {
@@ -250,7 +276,8 @@ function OverviewTab({ onStart }) {
       return undefined
     }
     const slideTimer = window.setInterval(() => {
-      setActiveRecruiterIndex((current) => (current + 1) % recruiters.length)
+      setActiveRecruiterIndex(Math.floor(Math.random() * recruiters.length))
+      setEmailFlashTick((current) => current + 1)
     }, 1000)
     return () => window.clearInterval(slideTimer)
   }, [recruiters.length])
@@ -305,6 +332,7 @@ function OverviewTab({ onStart }) {
             state={alertState}
             currentTime={currentTime}
             index={activeRecruiterIndex}
+            flashTick={emailFlashTick}
           />
         </div>
         <div key={activeKeyword} className="preview-card hot live-alert-flash">
@@ -331,7 +359,7 @@ function OverviewTab({ onStart }) {
   )
 }
 
-function LiveRecruiterAlert({ recruiter, state, currentTime, index }) {
+function LiveRecruiterAlert({ recruiter, state, currentTime, index, flashTick }) {
   if (!recruiter) {
     return (
       <div className="live-alert-copy">
@@ -342,7 +370,7 @@ function LiveRecruiterAlert({ recruiter, state, currentTime, index }) {
   }
 
   return (
-    <div key={recruiter.email} className="live-alert-copy live-alert-flash">
+    <div key={`${recruiter.email}-${flashTick}`} className="live-alert-copy live-alert-flash">
       <span>Recruiter email found</span>
       <strong>{recruiter.email}</strong>
       <small>{formatRecentCstTime(currentTime, index)}</small>

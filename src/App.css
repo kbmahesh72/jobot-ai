@@ -8,8 +8,8 @@
   min-height: 226px;
   display: flex;
   justify-content: space-between;
-  gap: 24px;
-  align-items: flex-end;
+  gap: 28px;
+  align-items: center;
   padding: 28px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
@@ -25,11 +25,16 @@
 .brand-lockup {
   display: flex;
   align-items: flex-start;
-  gap: 18px;
-  max-width: 760px;
+  gap: 22px;
+  min-width: 0;
+  max-width: 690px;
 }
 
-.logo-mark,
+.hero-copy {
+  padding-top: 2px;
+}
+
+.brand-logo,
 .preview-icon,
 .contact-card span {
   display: grid;
@@ -37,13 +42,78 @@
   flex: 0 0 auto;
 }
 
-.logo-mark {
-  width: 54px;
-  height: 54px;
+.brand-logo {
+  width: 124px;
+  min-height: 96px;
+  gap: 5px;
+  justify-items: center;
+  padding: 9px 8px 8px;
   border-radius: 8px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.94);
   color: #082a3d;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.74);
+}
+
+.logo-mark {
+  width: 34px;
+  height: 52px;
+}
+
+.logo-mark svg {
+  width: 34px;
+  height: 52px;
+  overflow: visible;
+}
+
+.logo-signal {
+  fill: #082a3d;
+  opacity: 0.98;
+}
+
+.logo-shadow {
+  opacity: 0.8;
+}
+
+.logo-shadow-cyan {
+  fill: #0b83b5;
+  transform: translate(2px, 1px);
+}
+
+.logo-shadow-orange {
+  fill: #e9532d;
+  transform: translate(-2px, 1px);
+}
+
+.brand-wordmark {
+  display: grid;
+  gap: 1px;
+  justify-items: center;
+  text-align: center;
+}
+
+.brand-wordmark p {
+  margin: 0;
+  color: #082a3d;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+}
+
+.brand-wordmark span {
+  color: #e9532d;
+  font-weight: 900;
+}
+
+.brand-wordmark small {
+  color: #0b83b5;
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .eyebrow,
@@ -62,13 +132,15 @@
 }
 
 .brand-band h1 {
-  max-width: 780px;
-  font-size: clamp(38px, 6.4vw, 68px);
-  line-height: 0.9;
-  text-wrap: balance;
+  max-width: none;
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 1.05;
+  white-space: nowrap;
 }
 
 .signal-strip {
+  position: relative;
+  top: 20px;
   display: grid;
   gap: 10px;
   min-width: 286px;
@@ -78,7 +150,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  width: fit-content;
+  width: 100%;
   padding: 10px 12px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.18);
@@ -703,10 +775,49 @@ textarea:focus {
   }
 
   .brand-lockup {
-    display: grid;
+    width: 100%;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+
+  .brand-band h1 {
+    flex: 1;
+    min-width: 0;
+    font-size: clamp(29px, 9vw, 42px);
+    line-height: 1.02;
+    white-space: normal;
+  }
+
+  .brand-logo {
+    width: 112px;
+    min-height: 88px;
+    gap: 4px;
+    justify-items: center;
+    padding: 8px;
+  }
+
+  .logo-mark,
+  .logo-mark svg {
+    width: 29px;
+    height: 44px;
+  }
+
+  .brand-wordmark {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .brand-wordmark p {
+    font-size: 15.5px;
+  }
+
+  .brand-wordmark small {
+    font-size: 5.5px;
   }
 
   .signal-strip {
+    top: 0;
     width: 100%;
     min-width: 0;
   }
