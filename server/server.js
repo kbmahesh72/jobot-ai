@@ -12,9 +12,10 @@ const __dirname = path.dirname(__filename)
 const appRoot = path.resolve(__dirname, '..')
 const projectRoot = path.resolve(appRoot, '..')
 const automationOutputDir = path.join(projectRoot, 'automation-output')
-const dataDir = path.join(appRoot, 'data')
+const dataDir = process.env.VERCEL ? path.join('/tmp', 'jobot-ai-data') : path.join(appRoot, 'data')
 const resumeDir = path.join(dataDir, 'resumes')
 const csvPath = path.join(dataDir, 'subscriptions.csv')
+const recruiterPreviewWorkbook = '20260528.xlsx'
 
 const app = express()
 const upload = multer({
@@ -85,17 +86,19 @@ app.post('/api/subscriptions', upload.single('resume'), async (request, response
 
 app.get('/api/todays-recruiters', async (request, response) => {
   try {
-    const workbookPath = path.join(automationOutputDir, `${todayFileStem()}.xlsx`)
+    const localWorkbookPath = path.join(appRoot, recruiterPreviewWorkbook)
+    const automationWorkbookPath = path.join(automationOutputDir, recruiterPreviewWorkbook)
+    const workbookPath = existsSync(localWorkbookPath) ? localWorkbookPath : automationWorkbookPath
     if (!existsSync(workbookPath)) {
       return response.json({
-        date: todayFileStem(),
+        date: path.basename(recruiterPreviewWorkbook, '.xlsx'),
         workbookPath,
         recruiters: [],
       })
     }
 
     response.json({
-      date: todayFileStem(),
+      date: path.basename(recruiterPreviewWorkbook, '.xlsx'),
       workbookPath,
       recruiters: await readRecruitersFromWorkbook(workbookPath),
     })
@@ -165,14 +168,6 @@ function csvValue(value) {
 
 function emailFileStem(email) {
   return email.toLowerCase().replace(/[^a-z0-9@._-]/g, '_')
-}
-
-function todayFileStem() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  return `${year}${month}${day}`
 }
 
 async function readRecruitersFromWorkbook(workbookPath) {

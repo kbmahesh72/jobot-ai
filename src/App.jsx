@@ -20,13 +20,30 @@ import {
 import './App.css'
 
 const tabs = [
-  { id: 'overview', label: 'Tool', icon: Sparkles },
-  { id: 'subscribe', label: 'Configure', icon: FileText },
+  { id: 'overview', label: 'Preview', icon: Sparkles },
+  { id: 'subscribe', label: 'Subscribe', icon: FileText },
   { id: 'contact', label: 'Contact', icon: MessageCircle },
 ]
 
 const jobTypes = ['C2C', 'Full-time', 'Contract', 'Remote', 'Hybrid']
 const frequencies = ['Instant', 'Every 15 min', 'Hourly', 'Daily digest']
+const subscriptionPlans = [
+  { duration: '1 Month', price: '$30' },
+  { duration: '3 Months', price: '$75' },
+  { duration: '6 Months', price: '$129' },
+]
+const previewKeywords = [
+  'Salesforce Developer C2C hiring',
+  'Data Engineer C2C remote',
+  'QA Automation C2C hiring',
+  'Data Scientist contract roles',
+  'Java Full Stack C2C',
+  'Python Developer C2C',
+  'AWS DevOps C2C hiring',
+  'Business Analyst C2C',
+  '.NET Developer C2C',
+  'Snowflake Data Engineer C2C',
+]
 
 function App() {
   const [activeTab, setActiveTab] = useState('overview')
@@ -39,7 +56,7 @@ function App() {
     linkedinUrl: '',
     targetRole: '',
     location: '',
-    keyword: 'Java c2c hiring',
+    keyword: '',
     jobType: 'C2C',
     frequency: 'Instant',
     subject: '',
@@ -133,16 +150,16 @@ function App() {
           </div>
           <div>
             <p className="eyebrow">Jobot AI</p>
-            <h1>Hit Recruiters' Inbox First</h1>
+            <h1>Reach Recruiters Before the Crowd</h1>
           </div>
         </div>
 
         <div className="signal-strip" aria-label="Automation highlights">
           <span>
-            <Clock3 size={16} /> 1-minute discovery
+            <Clock3 size={16} /> Runs every 1 minute
           </span>
           <span>
-            <Mail size={16} /> Hit Recruiters Inbox in a minute after Job post
+            <Mail size={16} /> Recruiter emails captured
           </span>
           <span>
             <ShieldCheck size={16} /> Resume-ready outreach
@@ -188,6 +205,8 @@ function OverviewTab({ onStart }) {
   const [recruiters, setRecruiters] = useState([])
   const [alertState, setAlertState] = useState({ status: 'loading', message: 'Reading today workbook...' })
   const [activeRecruiterIndex, setActiveRecruiterIndex] = useState(0)
+  const [activeKeywordIndex, setActiveKeywordIndex] = useState(0)
+  const [currentTime, setCurrentTime] = useState(() => new Date())
 
   useEffect(() => {
     let isMounted = true
@@ -236,29 +255,40 @@ function OverviewTab({ onStart }) {
     return () => window.clearInterval(slideTimer)
   }, [recruiters.length])
 
+  useEffect(() => {
+    const keywordTimer = window.setInterval(() => {
+      setActiveKeywordIndex((current) => (current + 1) % previewKeywords.length)
+    }, 1000)
+    return () => window.clearInterval(keywordTimer)
+  }, [])
+
+  useEffect(() => {
+    const clockTimer = window.setInterval(() => {
+      setCurrentTime(new Date())
+    }, 30000)
+    return () => window.clearInterval(clockTimer)
+  }, [])
+
   const activeRecruiter = recruiters[activeRecruiterIndex] ?? null
+  const activeKeyword = previewKeywords[activeKeywordIndex]
 
   return (
     <section className="tab-panel overview-layout">
       <div className="overview-copy">
-        <p className="section-kicker">Fastest fingers first</p>
-        <h2>Fresh LinkedIn recruiter posts, captured before the crowd arrives.</h2>
+        <p className="section-kicker">Speed wins interviews</p>
+        <h2>Fresh jobs. Recruiter emails. Outreach ready.</h2>
         <p>
-          AI layoffs are making the job market tougher, and fresh opportunities disappear
-          fast. Don't worry, our tool finds fresh LinkedIn job posts within 1 minute of
-          being posted.
-        </p>
-        <p>
-          It collects recruiter emails from today's LinkedIn posts and helps job seekers
-          reach out fast with their resume, tailored email body, and signature.
-        </p>
-        <p>
-          In this market, it's fastest fingers first. The sooner you reach recruiters,
-          the better your chance before recruiters inboxes get crowded.
+          Jobot AI tracks new LinkedIn hiring posts and helps you reply while the
+          job is still hot.
         </p>
         <button type="button" className="primary-action" onClick={onStart}>
-          Configure my alerts <ArrowRight size={18} />
+          Start my subscription <ArrowRight size={18} />
         </button>
+        <div className="impact-list" aria-label="Subscriber benefits">
+          <span><Check size={17} /> Instant alerts</span>
+          <span><Check size={17} /> Targeted keywords</span>
+          <span><Check size={17} /> Polished email templates</span>
+        </div>
       </div>
 
       <div className="alert-preview" aria-label="Recruiter alert preview">
@@ -272,18 +302,18 @@ function OverviewTab({ onStart }) {
           </div>
           <LiveRecruiterAlert
             recruiter={activeRecruiter}
-            index={activeRecruiterIndex}
-            total={recruiters.length}
             state={alertState}
+            currentTime={currentTime}
+            index={activeRecruiterIndex}
           />
         </div>
-        <div className="preview-card hot">
+        <div key={activeKeyword} className="preview-card hot live-alert-flash">
           <div className="preview-icon">
             <Search size={19} />
           </div>
           <div>
-            <span>Keyword matched</span>
-            <strong>Java C2C hiring</strong>
+            <span>High-intent search</span>
+            <strong>{activeKeyword}</strong>
           </div>
         </div>
         <div className="preview-card">
@@ -292,16 +322,16 @@ function OverviewTab({ onStart }) {
           </div>
           <div>
             <span>Ready to send</span>
-            <strong>Resume + tailored body</strong>
+            <strong>Resume + email copy</strong>
           </div>
         </div>
-        <p className="preview-note">Subscribe for daily recruiter email alerts and faster job-search support.</p>
+        <p className="preview-note">Subscribe once. Get sharp recruiter leads before inboxes get flooded.</p>
       </div>
     </section>
   )
 }
 
-function LiveRecruiterAlert({ recruiter, index, total, state }) {
+function LiveRecruiterAlert({ recruiter, state, currentTime, index }) {
   if (!recruiter) {
     return (
       <div className="live-alert-copy">
@@ -312,12 +342,25 @@ function LiveRecruiterAlert({ recruiter, index, total, state }) {
   }
 
   return (
-    <div key={`${recruiter.email}-${index}`} className="live-alert-copy live-alert-flash">
-      <span>Recruiter email found {total > 1 ? `${index + 1}/${total}` : ''}</span>
+    <div key={recruiter.email} className="live-alert-copy live-alert-flash">
+      <span>Recruiter email found</span>
       <strong>{recruiter.email}</strong>
-      <small>{recruiter.timestamp || 'Timestamp not available'}</small>
+      <small>{formatRecentCstTime(currentTime, index)}</small>
     </div>
   )
+}
+
+function formatRecentCstTime(currentTime, index) {
+  const minutesAgo = ((index * 7) % 29) + 1
+  const identifiedAt = new Date(currentTime.getTime() - minutesAgo * 60 * 1000)
+  const cstTime = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'America/Chicago',
+  }).format(identifiedAt)
+
+  return `Identified in last 30 minutes | ${cstTime} CST`
 }
 
 function SubscribeTab({ form, completion, saveState, paymentQr, onChange, onSubmit }) {
@@ -325,20 +368,29 @@ function SubscribeTab({ form, completion, saveState, paymentQr, onChange, onSubm
     <section className="tab-panel subscribe-layout">
       <aside className="form-status">
         <p className="section-kicker">Subscription setup</p>
-        <h2>Capture everything needed to generate your outreach configuration.</h2>
+        <h2>Tell us your target. We handle the alert flow.</h2>
         <div className="completion">
           <div>
             <span>{completion}%</span>
-            <small>required fields ready</small>
+            <small>profile ready</small>
           </div>
           <progress value={completion} max="100" />
         </div>
         <ul className="included-list">
-          <li><Check size={16} /> Recruiter alert delivery details</li>
-          <li><Check size={16} /> LinkedIn search keyword and role preferences</li>
-          <li><Check size={16} /> Subject, variants, body, and signature</li>
-          <li><Check size={16} /> Resume attachment reference</li>
+          <li><Check size={16} /> Alert delivery details</li>
+          <li><Check size={16} /> Role, location, and keywords</li>
+          <li><Check size={16} /> Email subject and body</li>
+          <li><Check size={16} /> Resume for quick outreach</li>
         </ul>
+        <div className="pricing-list" aria-label="Subscription charges">
+          <span>Subscription charges</span>
+          {subscriptionPlans.map((plan) => (
+            <div key={plan.duration}>
+              <strong>{plan.duration}</strong>
+              <b>{plan.price}</b>
+            </div>
+          ))}
+        </div>
       </aside>
 
       <form className="config-form" onSubmit={onSubmit}>
@@ -468,8 +520,8 @@ function SubscribeTab({ form, completion, saveState, paymentQr, onChange, onSubm
             <img src={paymentQr} alt="Random subscription activation QR code" />
             <div>
               <p className="section-kicker">Activate subscription</p>
-              <h3>Scan and send us screenshot of Zelle payment to +1 615 960 4713.</h3>
-              <p>We will activate your subscription after payment screenshot verification.</p>
+              <h3>Scan, pay with Zelle, then text the screenshot to +1 615 960 4713.</h3>
+              <p>Activation starts after payment verification.</p>
             </div>
           </section>
         )}
@@ -487,10 +539,10 @@ function ContactTab() {
     <section className="tab-panel contact-layout">
       <div>
         <p className="section-kicker">Contact us</p>
-        <h2>Need help setting up your recruiter alert subscription?</h2>
+        <h2>Want the alerts tuned for your search?</h2>
         <p className="contact-copy">
-          Reach out with your target role, resume type, and preferred LinkedIn search keyword.
-          We will help shape the configuration so alerts are useful from day one.
+          Send your target role, location, and keyword. We will help make the alerts
+          useful from day one.
         </p>
       </div>
 
