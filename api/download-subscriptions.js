@@ -1,4 +1,4 @@
-import { list } from '@vercel/blob'
+import { get, list } from '@vercel/blob'
 import process from 'node:process'
 
 export default async function handler(request, response) {
@@ -18,7 +18,7 @@ export default async function handler(request, response) {
     return response.status(404).json({ message: 'No subscription CSV files found yet.' })
   }
 
-  const csvFiles = await Promise.all(csvBlobs.map((blob) => fetch(blob.url).then((blobResponse) => blobResponse.text())))
+  const csvFiles = await Promise.all(csvBlobs.map((blob) => readPrivateBlobText(blob.pathname)))
   const [header = ''] = csvFiles[0].split(/\r?\n/)
   const rows = csvFiles.flatMap((csv) => csv.split(/\r?\n/).slice(1).filter(Boolean))
   const combinedCsv = `${header}\n${rows.join('\n')}\n`
@@ -26,4 +26,13 @@ export default async function handler(request, response) {
   response.setHeader('Content-Type', 'text/csv; charset=utf-8')
   response.setHeader('Content-Disposition', 'attachment; filename="subscriptions.csv"')
   return response.status(200).send(combinedCsv)
+}
+
+async function readPrivateBlobText(pathname) {
+  const result = await get(pathname, { access: 'private' })
+  if (!result || result.statusCode !== 200) {
+    return ''
+  }
+
+  return new Response(result.stream).text()
 }

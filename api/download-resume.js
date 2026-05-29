@@ -1,4 +1,5 @@
-import { list } from '@vercel/blob'
+import { get, list } from '@vercel/blob'
+import { Buffer } from 'node:buffer'
 import process from 'node:process'
 
 export default async function handler(request, response) {
@@ -28,6 +29,14 @@ export default async function handler(request, response) {
     return response.status(404).json({ message: 'Resume not found.' })
   }
 
-  response.setHeader('Location', resume.url)
-  return response.status(302).end()
+  const result = await get(resume.pathname, { access: 'private' })
+  if (!result || result.statusCode !== 200) {
+    return response.status(404).json({ message: 'Resume not found.' })
+  }
+
+  const file = Buffer.from(await new Response(result.stream).arrayBuffer())
+  const fileName = resume.pathname.split('/').pop() ?? 'resume'
+  response.setHeader('Content-Type', result.blob.contentType || 'application/octet-stream')
+  response.setHeader('Content-Disposition', `attachment; filename="${fileName.replaceAll('"', '')}"`)
+  return response.status(200).send(file)
 }

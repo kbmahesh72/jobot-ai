@@ -19,7 +19,6 @@ export default async function handler(request, response) {
       path: blob.pathname,
       size: blob.size,
       uploadedAt: blob.uploadedAt,
-      url: blob.url,
       downloadUrl: `/api/download-resume?file=${encodeURIComponent(blob.pathname)}`,
     }))
 

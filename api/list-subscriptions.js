@@ -20,7 +20,8 @@ export default async function handler(request, response) {
       fileName: blob.pathname.split('/').pop(),
       size: blob.size,
       uploadedAt: blob.uploadedAt,
-      url: blob.url,
+      downloadUrl:
+        blob.pathname.endsWith('/subscription.csv') ? '/api/download-subscriptions' : undefined,
     }))
 
   return response.status(200).json({ subscriptions })

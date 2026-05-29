@@ -66,17 +66,17 @@ export default async function handler(request, response) {
     const csv = `${csvHeaders.join(',')}\n${csvHeaders.map((header) => csvValue(row[header])).join(',')}\n`
     const [jsonFile, csvFile, resumeFile] = await Promise.all([
       put(`${folderPath}/subscription.json`, JSON.stringify(row, null, 2), {
-        access: 'public',
+        access: 'private',
         addRandomSuffix: false,
         contentType: 'application/json; charset=UTF-8',
       }),
       put(`${folderPath}/subscription.csv`, csv, {
-        access: 'public',
+        access: 'private',
         addRandomSuffix: false,
         contentType: 'text/csv; charset=UTF-8',
       }),
       put(`${folderPath}/${resumeFileName}`, resume.content, {
-        access: 'public',
+        access: 'private',
         addRandomSuffix: false,
         contentType: resume.mimeType || contentTypeFor(resumeFileName),
       }),
