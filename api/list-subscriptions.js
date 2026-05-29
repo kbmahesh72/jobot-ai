@@ -12,16 +12,16 @@ export default async function handler(request, response) {
   }
 
   const { blobs } = await list({ prefix: 'subscriptions/', limit: 1000 })
-  const resumes = blobs
-    .filter((blob) => !blob.pathname.endsWith('/subscription.json') && !blob.pathname.endsWith('/subscription.csv'))
+  const subscriptions = blobs
+    .filter((blob) => blob.pathname.endsWith('/subscription.json') || blob.pathname.endsWith('/subscription.csv'))
     .map((blob) => ({
-      fileName: blob.pathname.split('/').pop(),
       path: blob.pathname,
+      subscriber: blob.pathname.split('/')[1] ?? '',
+      fileName: blob.pathname.split('/').pop(),
       size: blob.size,
       uploadedAt: blob.uploadedAt,
       url: blob.url,
-      downloadUrl: `/api/download-resume?file=${encodeURIComponent(blob.pathname)}`,
     }))
 
-  return response.status(200).json({ resumes })
+  return response.status(200).json({ subscriptions })
 }

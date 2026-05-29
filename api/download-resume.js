@@ -1,8 +1,5 @@
-import { existsSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
-
-const resumeDir = path.join('/tmp', 'jobot-ai-data', 'resumes')
+import { list } from '@vercel/blob'
+import process from 'node:process'
 
 export default async function handler(request, response) {
   if (request.method !== 'GET') {
@@ -10,32 +7,27 @@ export default async function handler(request, response) {
     return response.status(405).json({ message: 'Method not allowed.' })
   }
 
-  const fileName = path.basename(String(request.query.file ?? ''))
-  if (!fileName) {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return response.status(500).json({ message: 'Vercel Blob storage is not configured.' })
+  }
+
+  const requestedFile = String(request.query.file ?? '').replace(/^\/+/, '')
+  if (!requestedFile || requestedFile.includes('..')) {
     return response.status(400).json({ message: 'Missing resume file name.' })
   }
 
-  const filePath = path.join(resumeDir, fileName)
-  if (!existsSync(filePath)) {
+  const { blobs } = await list({ prefix: 'subscriptions/', limit: 1000 })
+  const resume = blobs.find(
+    (blob) =>
+      blob.pathname === requestedFile ||
+      blob.pathname.endsWith(`/${requestedFile}`) ||
+      blob.pathname.endsWith(`/${requestedFile.split('/').pop()}`),
+  )
+
+  if (!resume) {
     return response.status(404).json({ message: 'Resume not found.' })
   }
 
-  const file = await readFile(filePath)
-  response.setHeader('Content-Type', contentTypeFor(fileName))
-  response.setHeader('Content-Disposition', `attachment; filename="${fileName.replaceAll('"', '')}"`)
-  return response.status(200).send(file)
-}
-
-function contentTypeFor(fileName) {
-  const extension = path.extname(fileName).toLowerCase()
-  if (extension === '.pdf') {
-    return 'application/pdf'
-  }
-  if (extension === '.doc') {
-    return 'application/msword'
-  }
-  if (extension === '.docx') {
-    return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  }
-  return 'application/octet-stream'
+  response.setHeader('Location', resume.url)
+  return response.status(302).end()
 }

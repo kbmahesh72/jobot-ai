@@ -1,8 +1,5 @@
-import { existsSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
-
-const csvPath = path.join('/tmp', 'jobot-ai-data', 'subscriptions.csv')
+import { list } from '@vercel/blob'
+import process from 'node:process'
 
 export default async function handler(request, response) {
   if (request.method !== 'GET') {
@@ -10,12 +7,23 @@ export default async function handler(request, response) {
     return response.status(405).json({ message: 'Method not allowed.' })
   }
 
-  if (!existsSync(csvPath)) {
-    return response.status(404).json({ message: 'No subscriptions CSV found yet.' })
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return response.status(500).json({ message: 'Vercel Blob storage is not configured.' })
   }
 
-  const csv = await readFile(csvPath, 'utf8')
+  const { blobs } = await list({ prefix: 'subscriptions/', limit: 1000 })
+  const csvBlobs = blobs.filter((blob) => blob.pathname.endsWith('/subscription.csv'))
+
+  if (csvBlobs.length === 0) {
+    return response.status(404).json({ message: 'No subscription CSV files found yet.' })
+  }
+
+  const csvFiles = await Promise.all(csvBlobs.map((blob) => fetch(blob.url).then((blobResponse) => blobResponse.text())))
+  const [header = ''] = csvFiles[0].split(/\r?\n/)
+  const rows = csvFiles.flatMap((csv) => csv.split(/\r?\n/).slice(1).filter(Boolean))
+  const combinedCsv = `${header}\n${rows.join('\n')}\n`
+
   response.setHeader('Content-Type', 'text/csv; charset=utf-8')
   response.setHeader('Content-Disposition', 'attachment; filename="subscriptions.csv"')
-  return response.status(200).send(csv)
+  return response.status(200).send(combinedCsv)
 }

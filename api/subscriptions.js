@@ -1,6 +1,7 @@
+import { put } from '@vercel/blob'
 import { Buffer } from 'node:buffer'
 import path from 'node:path'
-import { createSubscriptionFolder, googleDriveConfigured, uploadDriveFile } from './googleDrive.js'
+import process from 'node:process'
 
 const maxUploadSize = 8 * 1024 * 1024
 
@@ -47,10 +48,9 @@ export default async function handler(request, response) {
       return response.status(400).json({ message: 'Resume attachment is required.' })
     }
 
-    if (!googleDriveConfigured()) {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
       return response.status(500).json({
-        message:
-          'Google Drive storage is not configured. Set GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, and GOOGLE_DRIVE_PARENT_FOLDER_ID in Vercel.',
+        message: 'Vercel Blob storage is not configured. Connect a Blob store to this project in Vercel.',
       })
     }
 
@@ -62,34 +62,30 @@ export default async function handler(request, response) {
       resumeFileName,
     }
     const folderName = subscriptionFolderName(payload.email)
-    const folder = await createSubscriptionFolder(folderName)
+    const folderPath = `subscriptions/${folderName}/${timestampFolderName(row.createdAt)}`
     const csv = `${csvHeaders.join(',')}\n${csvHeaders.map((header) => csvValue(row[header])).join(',')}\n`
     const [jsonFile, csvFile, resumeFile] = await Promise.all([
-      uploadDriveFile({
-        folderId: folder.id,
-        fileName: 'subscription.json',
-        mimeType: 'application/json; charset=UTF-8',
-        content: JSON.stringify(row, null, 2),
+      put(`${folderPath}/subscription.json`, JSON.stringify(row, null, 2), {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: 'application/json; charset=UTF-8',
       }),
-      uploadDriveFile({
-        folderId: folder.id,
-        fileName: 'subscription.csv',
-        mimeType: 'text/csv; charset=UTF-8',
-        content: csv,
+      put(`${folderPath}/subscription.csv`, csv, {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: 'text/csv; charset=UTF-8',
       }),
-      uploadDriveFile({
-        folderId: folder.id,
-        fileName: resumeFileName,
-        mimeType: resume.mimeType || contentTypeFor(resumeFileName),
-        content: resume.content,
+      put(`${folderPath}/${resumeFileName}`, resume.content, {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: resume.mimeType || contentTypeFor(resumeFileName),
       }),
     ])
 
     return response.status(200).json({
       message: 'Subscription saved successfully.',
       folderName,
-      folderId: folder.id,
-      folderUrl: `https://drive.google.com/drive/folders/${folder.id}`,
+      folderPath,
       resumeFileName,
       files: {
         formJson: jsonFile,
@@ -246,6 +242,10 @@ function emailFileStem(email) {
 
 function subscriptionFolderName(email) {
   return clean(email.split('@')[0]).replace(/[^a-z0-9._-]/gi, '_') || 'subscription'
+}
+
+function timestampFolderName(value) {
+  return String(value).replace(/[^0-9a-z]/gi, '')
 }
 
 function contentTypeFromHeaders(headerText) {
