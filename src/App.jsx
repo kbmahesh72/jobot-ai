@@ -276,7 +276,7 @@ function OverviewTab({ onStart }) {
     <section className="tab-panel overview-layout">
       <div className="overview-copy">
         <p className="section-kicker">Speed wins interviews</p>
-        <h2>Fresh jobs. Recruiter emails. Outreach ready.</h2>
+        <h2>Reply first to every fresh recruiter job post.</h2>
         <p>
           Jobot AI tracks new LinkedIn hiring posts and helps you reply while the
           job is still hot.
@@ -294,7 +294,7 @@ function OverviewTab({ onStart }) {
       <div className="alert-preview" aria-label="Recruiter alert preview">
         <div className="preview-header">
           <span>Live alert</span>
-          <strong>00:58</strong>
+          <strong>{formatCstTimestamp(currentTime)}</strong>
         </div>
         <div className="preview-card">
           <div className="preview-icon">
@@ -361,6 +361,17 @@ function formatRecentCstTime(currentTime, index) {
   }).format(identifiedAt)
 
   return `Identified in last 30 minutes | ${cstTime} CST`
+}
+
+function formatCstTimestamp(currentTime) {
+  return `${new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'America/Chicago',
+  }).format(currentTime)} CST`
 }
 
 function SubscribeTab({ form, completion, saveState, paymentQr, onChange, onSubmit }) {
