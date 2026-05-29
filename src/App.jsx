@@ -199,7 +199,7 @@ function App() {
 
 function JobotLogo() {
   return (
-    <div className="brand-logo" aria-label="JoBot AI intelligent recruitment">
+    <div className="brand-logo" aria-label="MyJoBot AI intelligent recruitment">
       <div className="logo-mark" aria-hidden="true">
         <svg viewBox="0 0 72 112" role="img" focusable="false">
           <path
@@ -218,7 +218,7 @@ function JobotLogo() {
       </div>
       <div className="brand-wordmark">
         <p>
-          JoBot <span>AI</span>
+          MyJoBot <span>AI</span>
         </p>
         <small>Intelligent Recruitment</small>
       </div>

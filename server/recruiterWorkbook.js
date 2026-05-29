@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { bundledRecruiterEmails } from './recruiterEmails.js'
 
 export const recruiterEmailTextFile = 'recruiter-emails.txt'
 
@@ -12,17 +13,19 @@ export async function recruiterWorkbookPayload(appRoot, automationOutputDir) {
   if (!existsSync(emailTextPath)) {
     return {
       date: '20260528',
-      source: recruiterEmailTextFile,
+      source: 'bundled recruiter email list',
       emailTextPath,
-      recruiters: [],
+      recruiters: bundledRecruiterEmails.map((email) => ({ email })),
     }
   }
+
+  const recruiters = await readRecruitersFromText(emailTextPath)
 
   return {
     date: '20260528',
     source: recruiterEmailTextFile,
     emailTextPath,
-    recruiters: await readRecruitersFromText(emailTextPath),
+    recruiters: recruiters.length ? recruiters : bundledRecruiterEmails.map((email) => ({ email })),
   }
 }
 
