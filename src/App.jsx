@@ -126,7 +126,7 @@ function App() {
         method: 'POST',
         body: formData,
       })
-      const result = await response.json()
+      const result = await readJsonResponse(response)
       if (!response.ok) {
         throw new Error(result.message || 'Could not save subscription.')
       }
@@ -214,7 +214,7 @@ function OverviewTab({ onStart }) {
     async function loadRecruiters() {
       try {
         const response = await fetch('/api/todays-recruiters')
-        const result = await response.json()
+        const result = await readJsonResponse(response)
         if (!response.ok) {
           throw new Error(result.message || 'Could not read today recruiter emails.')
         }
@@ -538,7 +538,7 @@ function SubscribeTab({ form, completion, saveState, paymentQr, onChange, onSubm
         )}
 
         <button type="submit" className="primary-action form-action" disabled={saveState.status === 'saving'}>
-          {saveState.status === 'saving' ? 'Saving...' : 'Save subscription request'} <ArrowRight size={18} />
+          {saveState.status === 'saving' ? 'Subscribing...' : 'Subscribe'} <ArrowRight size={18} />
         </button>
       </form>
     </section>
@@ -591,6 +591,16 @@ async function createRandomPaymentQr(email) {
       width: 260,
     },
   )
+}
+
+async function readJsonResponse(response) {
+  const contentType = response.headers.get('content-type') ?? ''
+  if (contentType.includes('application/json')) {
+    return response.json()
+  }
+
+  const text = await response.text()
+  throw new Error(text ? text.slice(0, 120) : 'Server returned a non-JSON response.')
 }
 
 export default App
