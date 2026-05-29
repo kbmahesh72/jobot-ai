@@ -1,11 +1,7 @@
 import { Buffer } from 'node:buffer'
-import { existsSync } from 'node:fs'
-import { appendFile, mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { createSubscriptionFolder, googleDriveConfigured, uploadDriveFile } from './googleDrive.js'
 
-const dataDir = path.join('/tmp', 'jobot-ai-data')
-const resumeDir = path.join(dataDir, 'resumes')
-const csvPath = path.join(dataDir, 'subscriptions.csv')
 const maxUploadSize = 8 * 1024 * 1024
 
 const csvHeaders = [
@@ -51,24 +47,55 @@ export default async function handler(request, response) {
       return response.status(400).json({ message: 'Resume attachment is required.' })
     }
 
-    await mkdir(resumeDir, { recursive: true })
+    if (!googleDriveConfigured()) {
+      return response.status(500).json({
+        message:
+          'Google Drive storage is not configured. Set GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, and GOOGLE_DRIVE_PARENT_FOLDER_ID in Vercel.',
+      })
+    }
+
     const extension = path.extname(resume.fileName) || '.resume'
     const resumeFileName = `${emailFileStem(payload.email)}${extension.toLowerCase()}`
-    await writeFile(path.join(resumeDir, resumeFileName), resume.content)
-
     const row = {
       createdAt: new Date().toISOString(),
       ...payload,
       resumeFileName,
     }
-
-    await ensureCsv()
-    await appendFile(csvPath, `${csvHeaders.map((header) => csvValue(row[header])).join(',')}\n`, 'utf8')
+    const folderName = subscriptionFolderName(payload.email)
+    const folder = await createSubscriptionFolder(folderName)
+    const csv = `${csvHeaders.join(',')}\n${csvHeaders.map((header) => csvValue(row[header])).join(',')}\n`
+    const [jsonFile, csvFile, resumeFile] = await Promise.all([
+      uploadDriveFile({
+        folderId: folder.id,
+        fileName: 'subscription.json',
+        mimeType: 'application/json; charset=UTF-8',
+        content: JSON.stringify(row, null, 2),
+      }),
+      uploadDriveFile({
+        folderId: folder.id,
+        fileName: 'subscription.csv',
+        mimeType: 'text/csv; charset=UTF-8',
+        content: csv,
+      }),
+      uploadDriveFile({
+        folderId: folder.id,
+        fileName: resumeFileName,
+        mimeType: resume.mimeType || contentTypeFor(resumeFileName),
+        content: resume.content,
+      }),
+    ])
 
     return response.status(200).json({
       message: 'Subscription saved successfully.',
-      csvPath,
+      folderName,
+      folderId: folder.id,
+      folderUrl: `https://drive.google.com/drive/folders/${folder.id}`,
       resumeFileName,
+      files: {
+        formJson: jsonFile,
+        formCsv: csvFile,
+        resume: resumeFile,
+      },
     })
   } catch (error) {
     console.error(error)
@@ -124,7 +151,7 @@ function parseMultipartFormData(buffer, contentType) {
     }
 
     if (fileName) {
-      files[name] = { fileName, content }
+      files[name] = { fileName, content, mimeType: contentTypeFromHeaders(headerText) }
     } else {
       fields[name] = content.toString('utf8')
     }
@@ -208,13 +235,6 @@ function requiredFields() {
   ]
 }
 
-async function ensureCsv() {
-  await mkdir(dataDir, { recursive: true })
-  if (!existsSync(csvPath)) {
-    await writeFile(csvPath, `${csvHeaders.join(',')}\n`, 'utf8')
-  }
-}
-
 function csvValue(value) {
   const text = String(value ?? '')
   return `"${text.replaceAll('"', '""')}"`
@@ -222,4 +242,26 @@ function csvValue(value) {
 
 function emailFileStem(email) {
   return email.toLowerCase().replace(/[^a-z0-9@._-]/g, '_')
+}
+
+function subscriptionFolderName(email) {
+  return clean(email.split('@')[0]).replace(/[^a-z0-9._-]/gi, '_') || 'subscription'
+}
+
+function contentTypeFromHeaders(headerText) {
+  return headerText.match(/content-type:\s*([^\r\n]+)/i)?.[1]?.trim() ?? ''
+}
+
+function contentTypeFor(fileName) {
+  const extension = path.extname(fileName).toLowerCase()
+  if (extension === '.pdf') {
+    return 'application/pdf'
+  }
+  if (extension === '.doc') {
+    return 'application/msword'
+  }
+  if (extension === '.docx') {
+    return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  }
+  return 'application/octet-stream'
 }
